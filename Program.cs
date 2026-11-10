@@ -1,55 +1,75 @@
 ﻿namespace DelegatePractic
 {
-    internal class Program
+    class Program
     {
-        delegate void Operation(int x, int y);
-        delegate int Operation2(int x, int y);
         static void Main(string[] args)
         {
-            //массив анонимных методов
-            Operation[] operations = [delegate(int x,int y) { Console.WriteLine(x + y); }, delegate (int x, int y) { Console.WriteLine(x - y); }, delegate (int x, int y) { Console.WriteLine(x * y); }];
-            Operation? oper=null;
-            Random rnd = new Random();
-            for (int i = 0; i < 10; i++)
+            //массив операций
+            KeyValuePair<char, Func<double, double, double>>[] opers =
+                [
+                    new KeyValuePair<char, Func<double, double, double>>('+',(x,y)=>x+y),
+                    new KeyValuePair<char, Func<double, double, double>>('+',(x,y)=>x+y),
+                    new KeyValuePair<char, Func<double, double, double>>('-',(x,y)=>x-y),
+                    new KeyValuePair<char, Func<double, double, double>>('*',(x,y)=>x*y),
+                    new KeyValuePair<char, Func<double, double, double>>('*',(x,y)=>x*y),
+                    new KeyValuePair<char, Func<double, double, double>>('/',delegate(double x, double y)
+                    {
+                        if(y==0)
+                            throw new DivideByZeroException(message:"Деление на ноль запрещено");
+                        else
+                            return x/y;
+                    }),
+                ];
+            //добавление математических операций калькулятору:
+            foreach (var op in opers)
             {
-                oper += operations[rnd.Next(0, operations.Length)];//добавление методов в делегат
+                try
+                {
+                    Calc.Add_Operation(op.Key, op.Value);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
-            oper(5, 4);//вызов всех методов, которые были добавлены в делегат
-            var mas=oper.GetInvocationList();//список всех методов в делегате
-            foreach (Operation op in mas)
+            Console.Write($"Список доступных операций: {Calc.ListOperation()}");
+            do
             {
-                if (op == Sum)
+                Console.WriteLine("Введите выражение, которое надо посчитать, разделяя все элементы пробелами или Q для выхода из программы: ");
+                Console.Write("Ввод: ");
+                string[] buffer = Console.ReadLine().Split();
+                try
                 {
-                    Console.WriteLine("Sum");  
+                    if (buffer.Length == 1)
+                    {
+                        if (buffer[0] == "Q" || buffer[0] == "q")
+                            break;
+                        else
+                            throw new Exception("Невозможный ввод");
+                    }
+                    //будем считать, если ввели 3 параметра, то 2 из них числа и знак операции в правильном порядке
+                    else if (buffer.Length == 3)
+                    {
+                        try
+                        {
+                            double res = Calc.Calculation(Convert.ToDouble(buffer[0]), Convert.ToDouble(buffer[2]), Convert.ToChar(buffer[1]));
+                            Console.WriteLine($"Ответ: {res}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Невозможный ввод");
+                    }
                 }
-                else if (op ==Diff)
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Diff");
+                    Console.WriteLine(ex.Message);
                 }
-                else if(op==Multi)
-                {
-                    Console.WriteLine("Multi");
-                }
-            }
-            Operation2 op2 = delegate (int x, int y)
-            {
-                Console.WriteLine("Hello World");
-                oper(3, 3);
-                return x + y;
-            };
-            op2(3, 3);
-        }
-        static void Sum(int x, int y)
-        {
-            Console.WriteLine(x + y);   
-        }
-        static void Multi(int x, int y)
-        {
-            Console.WriteLine(x * y);
-        }
-        static void Diff(int x, int y)
-        {
-            Console.WriteLine(x - y);
+            } while (true);
         }
     }
 }
